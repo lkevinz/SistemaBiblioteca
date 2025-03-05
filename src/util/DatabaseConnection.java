@@ -21,7 +21,7 @@ public class DatabaseConnection {
             USER = properties.getProperty("db.user");
             PASSWORD = properties.getProperty("db.password");
         } catch (IOException e) {
-            System.err.println("Error al cargar config.properties: " + e.getMessage());
+            System.err.println("❌ Error al cargar config.properties: " + e.getMessage());
         }
     }
 

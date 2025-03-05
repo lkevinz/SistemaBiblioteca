@@ -5,6 +5,16 @@
 package gui;
 
 import java.awt.Color;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import models.Categoria;
+import models.Libro;
+import services.CategoriaService;
+import services.LibroService;
+import util.JTextFieldAutoCompleter;
 
 
 
@@ -15,12 +25,195 @@ import java.awt.Color;
 public class LibrosFrame extends javax.swing.JFrame {
 
     int xMouse, yMouse;
+    private LibroService libroService;
+    private CategoriaService categoriaService;
     /**
      * Creates new form LibrosFrame
      */
     public LibrosFrame() {
         initComponents();
+        // Inicializa los servicios
+        libroService = new LibroService();
+        categoriaService = new CategoriaService();
+        
+        // Configura autocompletar para la sección de búsqueda
+        new JTextFieldAutoCompleter(b_txtTitulo, libroService.obtenerTitulosLibros());
+        new JTextFieldAutoCompleter(b_txtAutor, libroService.obtenerAutoresLibros());
+        
+        // Carga el combo de categorías para búsqueda
+        cargarCategoriasBusqueda();
+        
+        // Llena la tabla con TODOS los libros al iniciar (sin filtros)
+        buscarLibros();
     }
+    // Método para llenar el combo de búsqueda con "Todas" y las categorías disponibles
+    private void cargarCategoriasBusqueda() {
+        List<Categoria> lista = categoriaService.listarCategorias();
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+        model.addElement("Todas");
+        for (Categoria cat : lista) {
+            // Se muestra "id - nombre"
+            model.addElement(cat.getIdCategoria() + " - " + cat.getNombre());
+        }
+        b_cbCateg.setModel(model);
+        b_cbCateg.setSelectedIndex(0);
+    }
+    
+    // --- Métodos de funcionalidad ---
+    
+    // 1. Registrar Libro: Lee los valores de los textfields de registro y llama al DAO para insertarlo
+    private void registrarLibro() {
+        try {
+            String titulo = txtTitle.getText().trim();
+            String autor = txtAutor.getText().trim();
+            // Suponemos que para registrar la categoría se ingresa el id en txtAutor1 (o, si tienes otro componente, cámbialo)
+            int idCategoria = 0;
+            try {
+                idCategoria = Integer.parseInt(txtAutor1.getText().trim());
+            } catch(NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "El id de la categoría debe ser numérico.");
+                return;
+            }
+            String isbn = txtISBN.getText().trim();
+            int cantidadDisponible = Integer.parseInt(txtCantDisponible.getText().trim());
+            String fechaPublicacion = txtFechaPub.getText().trim();
+            
+            // Se crea el objeto Libro (se asume que el constructor y setters han sido actualizados para los nuevos atributos)
+            Libro libro = new Libro(0, titulo, autor, idCategoria, true);
+            libro.setIsbn(isbn);
+            libro.setCantidadDisponible(cantidadDisponible);
+            libro.setFechaPublicacion(fechaPublicacion);
+            
+            // Se registra el libro llamando al método del DAO a través del service
+            libroService.getLibroDAO().agregarLibro(libro);
+            
+            JOptionPane.showMessageDialog(this, "Libro registrado correctamente.");
+            limpiarCamposRegistro();
+            buscarLibros();
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al registrar el libro: " + e.getMessage());
+        }
+    }
+    
+    // Limpia los textfields de la sección de registro
+    private void limpiarCamposRegistro() {
+        txtTitle.setText("");
+        txtAutor.setText("");
+        txtAutor1.setText("");
+        txtISBN.setText("");
+        txtCantDisponible.setText("");
+        txtFechaPub.setText("");
+    }
+    
+    // 2. Buscar Libros: Obtiene los filtros de búsqueda y llena la tabla
+    private void buscarLibros() {
+        // Se obtienen los filtros de la sección buscar
+        String titulo = b_txtTitulo.getText().trim();
+        String autor = b_txtAutor.getText().trim();
+        int idCategoria = 0;
+        String catSel = (String) b_cbCateg.getSelectedItem();
+        if (catSel != null && !catSel.equals("Todas")) {
+            try {
+                idCategoria = Integer.parseInt(catSel.split(" - ")[0]);
+            } catch(NumberFormatException e) {
+                idCategoria = 0;
+            }
+        }
+        
+        // Se listan TODOS los libros (sin filtrar por disponibilidad)
+        List<Libro> lista = libroService.listarTodosLibros();
+        
+        // Se aplican los filtros si se han ingresado valores
+        if (!titulo.isEmpty()) {
+            lista = lista.stream()
+                    .filter(lib -> lib.getTitulo().toLowerCase().contains(titulo.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (!autor.isEmpty()) {
+            lista = lista.stream()
+                    .filter(lib -> lib.getAutor().toLowerCase().contains(autor.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (idCategoria != 0) {
+            final int finalIdCategoria = idCategoria;
+            lista = lista.stream()
+            .filter(lib -> lib.getIdCategoria() == finalIdCategoria)
+            .collect(Collectors.toList());
+        }
+
+        
+        llenarTabla(lista);
+    }
+    
+    // Llena la tabla table_libros con la lista de libros
+    private void llenarTabla(List<Libro> libros) {
+        // Define las columnas (incluyendo los nuevos atributos)
+        String[] columnas = {"ID", "Título", "Autor", "Categoría", "ISBN", "Cant. Disponible", "Año Publicación", "Disponible"};
+        DefaultTableModel model = new DefaultTableModel(columnas, 0);
+        
+        for (Libro libro : libros) {
+            Object[] fila = new Object[8];
+            fila[0] = libro.getIdLibro();
+            fila[1] = libro.getTitulo();
+            fila[2] = libro.getAutor();
+            fila[3] = libro.getIdCategoria(); // O, si tienes el nombre de la categoría, úsalo
+            fila[4] = libro.getIsbn();
+            fila[5] = libro.getCantidadDisponible();
+            fila[6] = libro.getFechaPublicacion();
+            fila[7] = libro.isDisponible() ? "Sí" : "No";
+            model.addRow(fila);
+        }
+        
+        table_libros.setModel(model);
+    }
+    
+    // 3. Modificar Libro: Toma la fila seleccionada, extrae los datos editados y actualiza la BD
+    private void modificarLibro() {
+        int fila = table_libros.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un libro para modificar.");
+            return;
+        }
+        try {
+            int idLibro = (int) table_libros.getValueAt(fila, 0);
+            String nuevoTitulo = table_libros.getValueAt(fila, 1).toString();
+            String nuevoAutor = table_libros.getValueAt(fila, 2).toString();
+            int nuevaCategoria = Integer.parseInt(table_libros.getValueAt(fila, 3).toString());
+            String nuevoIsbn = table_libros.getValueAt(fila, 4).toString();
+            int nuevaCant = Integer.parseInt(table_libros.getValueAt(fila, 5).toString());
+            String nuevaFechaPub = table_libros.getValueAt(fila, 6).toString();
+            boolean disponible = table_libros.getValueAt(fila, 7).toString().equalsIgnoreCase("Sí");
+            
+            Libro libro = new Libro(idLibro, nuevoTitulo, nuevoAutor, nuevaCategoria, disponible);
+            libro.setIsbn(nuevoIsbn);
+            libro.setCantidadDisponible(nuevaCant);
+            libro.setFechaPublicacion(nuevaFechaPub);
+            
+            libroService.actualizarLibro(libro);
+            JOptionPane.showMessageDialog(this, "Libro modificado correctamente.");
+            buscarLibros();
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al modificar: " + e.getMessage());
+        }
+    }
+    
+    // 4. Eliminar Libro: Elimina el registro del libro seleccionado
+    private void eliminarLibro() {
+        int fila = table_libros.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un libro para eliminar.");
+            return;
+        }
+        int idLibro = (int) table_libros.getValueAt(fila, 0);
+        int conf = JOptionPane.showConfirmDialog(this, "¿Está seguro de eliminar este libro?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (conf != JOptionPane.YES_OPTION) {
+            return;
+        }
+        libroService.eliminarLibro(idLibro);
+        JOptionPane.showMessageDialog(this, "Libro eliminado correctamente.");
+        buscarLibros();
+    }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -42,7 +235,6 @@ public class LibrosFrame extends javax.swing.JFrame {
         lblNombre2 = new javax.swing.JLabel();
         txtCantDisponible = new javax.swing.JTextField();
         lblNombre4 = new javax.swing.JLabel();
-        cbCatego = new javax.swing.JComboBox<>();
         lblNombre5 = new javax.swing.JLabel();
         txtFechaPub = new javax.swing.JPasswordField();
         btnSave = new javax.swing.JPanel();
@@ -66,6 +258,7 @@ public class LibrosFrame extends javax.swing.JFrame {
         lblExit = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         table_libros = new javax.swing.JTable();
+        txtAutor1 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
@@ -342,46 +535,47 @@ public class LibrosFrame extends javax.swing.JFrame {
                                 .addComponent(jLabel1)
                                 .addComponent(lblNombre, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(cbCatego, 0, 120, Short.MAX_VALUE)
-                            .addComponent(txtTitle)
+                        .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(txtAutor)
                             .addComponent(txtISBN)
                             .addComponent(txtFechaPub)
-                            .addComponent(txtCantDisponible)))
+                            .addComponent(txtCantDisponible)
+                            .addComponent(txtAutor1)
+                            .addComponent(txtTitle)))
                     .addGroup(panelLayout.createSequentialGroup()
                         .addGap(98, 98, 98)
                         .addComponent(btnSave, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 15, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel2)
-                    .addGroup(panelLayout.createSequentialGroup()
-                        .addGap(207, 207, 207)
-                        .addComponent(btnBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 523, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(panelLayout.createSequentialGroup()
-                        .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(b_txtTitulo, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                            .addComponent(lblNombre6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(68, 68, 68)
-                        .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(panelLayout.createSequentialGroup()
-                                .addComponent(lblNombre7, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(b_cbCateg, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(lblNombre8))
-                                .addGap(16, 16, 16))
-                            .addComponent(b_txtAutor, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(btnMod, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(77, 77, 77)
-                .addComponent(btnDelete, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(198, 198, 198))
+                .addGap(32, 32, 32)
+                .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jLabel2)
+                        .addGroup(panelLayout.createSequentialGroup()
+                            .addGap(207, 207, 207)
+                            .addComponent(btnBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 523, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(panelLayout.createSequentialGroup()
+                            .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(b_txtTitulo, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(lblNombre6, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGap(68, 68, 68)
+                            .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(lblNombre7, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(b_cbCateg, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(lblNombre8))
+                                    .addGap(16, 16, 16))
+                                .addComponent(b_txtAutor, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnMod, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(77, 77, 77)
+                        .addComponent(btnDelete, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(108, 108, 108)))
+                .addGap(31, 31, 31))
             .addGroup(panelLayout.createSequentialGroup()
                 .addComponent(head, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
@@ -432,7 +626,7 @@ public class LibrosFrame extends javax.swing.JFrame {
                         .addGap(18, 18, 18)
                         .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(lblNombre3)
-                            .addComponent(cbCatego, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(txtAutor1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
                         .addGroup(panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(lblNombre2)
@@ -614,7 +808,6 @@ public class LibrosFrame extends javax.swing.JFrame {
     private javax.swing.JPanel btnExit;
     private javax.swing.JPanel btnMod;
     private javax.swing.JPanel btnSave;
-    private javax.swing.JComboBox<String> cbCatego;
     private javax.swing.JPanel head;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -637,6 +830,7 @@ public class LibrosFrame extends javax.swing.JFrame {
     private javax.swing.JPanel panel;
     private javax.swing.JTable table_libros;
     private javax.swing.JTextField txtAutor;
+    private javax.swing.JTextField txtAutor1;
     private javax.swing.JTextField txtCantDisponible;
     private javax.swing.JPasswordField txtFechaPub;
     private javax.swing.JTextField txtISBN;

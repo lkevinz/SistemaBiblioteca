@@ -5,6 +5,14 @@
 package gui;
 
 import java.awt.Color;
+import java.awt.print.PrinterException;
+import java.util.List;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import services.ReporteService;
+import util.JTextFieldAutoCompleter;
+import util.PDFGenerator;
 
 /**
  *
@@ -12,11 +20,123 @@ import java.awt.Color;
  */
 public class ReporteFrame extends javax.swing.JFrame {
     int xMouse, yMouse;
+    private ReporteService reporteService;
     /**
      * Creates new form ReporteFrame
      */
     public ReporteFrame() {
         initComponents();
+        // Inicializa el servicio de reportes
+        reporteService = new ReporteService();
+        
+        // Configura autocompletar para los campos Usuario y Libro
+        new JTextFieldAutoCompleter(txtUsuario, reporteService.obtenerUsuarios());
+        new JTextFieldAutoCompleter(txtLibro, reporteService.obtenerLibros());
+        
+        // Configura el combo de Estado con "Todos", "Disponible" y "No Disponible"
+        cargarComboEstado();
+        // Configura el combo de Exportar con las opciones dadas
+        cargarComboExportar();
+        
+        // Genera el reporte inicial (puede ser sin filtros o con un intervalo por defecto)
+        generarReporteBusqueda();
+    }
+    
+    // Carga el combo de Estado
+    private void cargarComboEstado() {
+        DefaultComboBoxModel<String> modelo = new DefaultComboBoxModel<>();
+        modelo.addElement("Todos");
+        modelo.addElement("Disponible");
+        modelo.addElement("No Disponible");
+        jComboBox1.setModel(modelo);
+        jComboBox1.setSelectedIndex(0);
+    }
+    
+    // Carga el combo de Exportar
+    private void cargarComboExportar() {
+        DefaultComboBoxModel<String> modelo = new DefaultComboBoxModel<>();
+        modelo.addElement("Libros más prestados en los últimos 6 meses.");
+        modelo.addElement("Usuarios con más préstamos realizados en los últimos 3 meses.");
+        modelo.addElement("Porcentaje de libros por género.");
+        modelo.addElement("Listar todos los libros que no se han prestado en el último año.");
+        modelo.addElement("Mostrar usuarios con reservas pendientes o vencidas.");
+        cb_reportes.setModel(modelo);
+    }
+    
+    // Genera el reporte según los filtros ingresados en la sección Buscar
+    private void generarReporteBusqueda() {
+        String fechaPrestamo = txtFechaPrestamo.getText().trim();
+        String fechaDevolucion = txtFechaDevolucion.getText().trim();
+        String usuario = txtUsuario.getText().trim();
+        String libro = txtLibro.getText().trim();
+        String estado = (String) jComboBox1.getSelectedItem();
+        
+        List<Object[]> datos = reporteService.buscarReportes(fechaPrestamo, fechaDevolucion, usuario, libro, estado);
+        limpiarTablaReportes();
+        llenarTablaReportes(datos);
+    }
+    
+    // Llena la tabla de reportes con los datos obtenidos
+    private void llenarTablaReportes(List<Object[]> datos) {
+        String[] columnas = {"ID", "Fecha", "Usuario", "Libro", "Estado", "Detalle"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+        for (Object[] fila : datos) {
+            modelo.addRow(fila);
+        }
+        tabla_reportes.setModel(modelo);
+    }
+    
+    // Limpia la tabla de reportes para evitar duplicados
+    private void limpiarTablaReportes() {
+        DefaultTableModel modelo = (DefaultTableModel) tabla_reportes.getModel();
+        modelo.setRowCount(0);
+    }
+    
+    // Exporta el contenido de la tabla a PDF
+    private void exportarPDF() {
+        String contenido = "";
+        DefaultTableModel modelo = (DefaultTableModel) tabla_reportes.getModel();
+        // Cabecera de columnas
+        for (int i = 0; i < modelo.getColumnCount(); i++) {
+            contenido += modelo.getColumnName(i) + "\t";
+        }
+        contenido += "\n";
+        // Filas
+        for (int i = 0; i < modelo.getRowCount(); i++) {
+            for (int j = 0; j < modelo.getColumnCount(); j++) {
+                contenido += modelo.getValueAt(i, j) + "\t";
+            }
+            contenido += "\n";
+        }
+        PDFGenerator.generarPDF(contenido);
+        JOptionPane.showMessageDialog(this, "PDF generado correctamente.");
+    }
+    
+    // Exporta a Excel (en este ejemplo, solo se notifica)
+    private void exportarExcel() {
+        JOptionPane.showMessageDialog(this, "Función de exportación a Excel no implementada aún.");
+    }
+    
+    // Imprime el reporte
+    private void imprimirReporte() {
+        try {
+            boolean complete = tabla_reportes.print();
+            if (complete) {
+                JOptionPane.showMessageDialog(this, "Reporte enviado a impresora.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Impresión cancelada.");
+            }
+        } catch (PrinterException ex) {
+            JOptionPane.showMessageDialog(this, "Error al imprimir: " + ex.getMessage());
+        }
+    }
+    
+    // Genera el reporte de exportación según la opción seleccionada en cb_reportes
+    private void generarReporteExportar() {
+        String opcion = (String) cb_reportes.getSelectedItem();
+        limpiarTablaReportes();
+        List<Object[]> datos = reporteService.generarReporteExportar(opcion);
+        llenarTablaReportes(datos);
     }
 
     /**
@@ -297,7 +417,11 @@ public class ReporteFrame extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        cb_reportes.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cb_reportes.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cb_reportesActionPerformed(evt);
+            }
+        });
 
         jLabel3.setFont(new java.awt.Font("Consolas", 0, 12)); // NOI18N
         jLabel3.setText("Seleccionar:");
@@ -462,10 +586,12 @@ public class ReporteFrame extends javax.swing.JFrame {
 
     private void btnReporteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnReporteMouseClicked
         // TODO add your handling code here:
+        generarReporteBusqueda();
     }//GEN-LAST:event_btnReporteMouseClicked
 
     private void btnPDFMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnPDFMouseClicked
         // TODO add your handling code here:
+        exportarPDF();
     }//GEN-LAST:event_btnPDFMouseClicked
 
     private void btnPDFMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnPDFMouseEntered
@@ -484,6 +610,7 @@ public class ReporteFrame extends javax.swing.JFrame {
 
     private void btnEXCELMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnEXCELMouseClicked
         // TODO add your handling code here:
+        exportarExcel();
     }//GEN-LAST:event_btnEXCELMouseClicked
 
     private void btnEXCELMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnEXCELMouseEntered
@@ -502,6 +629,7 @@ public class ReporteFrame extends javax.swing.JFrame {
 
     private void btnPRINTMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnPRINTMouseClicked
         // TODO add your handling code here:
+        imprimirReporte();
     }//GEN-LAST:event_btnPRINTMouseClicked
 
     private void btnPRINTMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnPRINTMouseEntered
@@ -531,6 +659,11 @@ public class ReporteFrame extends javax.swing.JFrame {
         btnReporte.setBackground(fondo);
         lblReporte.setForeground(Color.WHITE);
     }//GEN-LAST:event_btnReporteMouseExited
+
+    private void cb_reportesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cb_reportesActionPerformed
+        // TODO add your handling code here:
+        generarReporteExportar();
+    }//GEN-LAST:event_cb_reportesActionPerformed
 
     /**
      * @param args the command line arguments

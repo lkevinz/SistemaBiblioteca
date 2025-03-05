@@ -5,6 +5,14 @@
 package gui;
 
 import java.awt.Color;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import models.Usuario;
+import services.UsuarioService;
+import util.JTextFieldAutoCompleter;
 
 /**
  *
@@ -12,12 +20,165 @@ import java.awt.Color;
  */
 public class UsuarioFrame extends javax.swing.JFrame {
     int xMouse, yMouse;
+    private UsuarioService usuarioService;
     /**
      * Creates new form UsuarioFrame
      */
     public UsuarioFrame() {
         initComponents();
+        // Inicializa el servicio de usuarios
+        usuarioService = new UsuarioService();
+        
+        // Llenar el combobox de Tipo de usuario con las opciones de la BD (ejemplo)
+        cargarComboTipo();
+        
+        // Configurar autocompletado para los campos de búsqueda (por ejemplo, para Nombre y DNI)
+        new JTextFieldAutoCompleter(txtNombre1, usuarioService.listarUsuarios().stream().map(u -> u.getNombre()).distinct().collect(Collectors.toList()));
+        new JTextFieldAutoCompleter(txtNombre2, usuarioService.listarUsuarios().stream().map(u -> u.getDocumentoIdentidad()).distinct().collect(Collectors.toList()));
+        
+        // Al iniciar, mostrar todos los usuarios en la tabla
+        buscarUsuarios();
     }
+    
+    // Método para cargar el combo de Tipo de usuario
+    private void cargarComboTipo() {
+        // Ejemplo: las opciones pueden ser "Administrador", "Cliente", "Empleado"
+        DefaultComboBoxModel<String> modelo = new DefaultComboBoxModel<>();
+        modelo.addElement("Administrador");
+        modelo.addElement("Cliente");
+        modelo.addElement("Empleado");
+        cbRol.setModel(modelo);
+    }
+    
+    // Método para registrar un usuario
+    private void registrarUsuario() {
+        try {
+            String nombre = txtNombre.getText().trim();
+            String dni = txtDNI.getText().trim();
+            String email = txtMail.getText().trim();
+            String telefono = txtTel.getText().trim();
+            String tipo = (String) cbRol.getSelectedItem();
+            String pass = new String(txtPass.getPassword()).trim();
+            
+            if (nombre.isEmpty() || dni.isEmpty() || email.isEmpty() || telefono.isEmpty() || pass.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.");
+                return;
+            }
+            
+            Usuario usuario = new Usuario(0, nombre, dni, email, telefono, tipo, pass);
+            // Llama al método de agregar usuario en el DAO (a través del service)
+            // NOTA: Se asume que en UsuarioDAO se implementa agregarUsuario tal como ya tienes.
+            usuarioService.listarUsuarios(); // Solo para ejemplificar que el service está activo.
+            // Se utiliza el método existente agregarUsuario (ya implementado en UsuarioDAO)
+            // Aquí se llama directamente al DAO a través de UsuarioService (si tienes un método registrarUsuario, úsalo)
+            // Por ejemplo:
+            // usuarioService.registrarUsuario(usuario);
+            // En este ejemplo, usamos:
+            usuarioService.registrarUsuario(usuario);
+
+            
+            JOptionPane.showMessageDialog(this, "Usuario registrado correctamente.");
+            limpiarCamposRegistro();
+            buscarUsuarios();
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al registrar el usuario: " + e.getMessage());
+        }
+    }
+    
+    // Método para limpiar los campos de registro
+    private void limpiarCamposRegistro() {
+        txtNombre.setText("");
+        txtDNI.setText("");
+        txtMail.setText("");
+        txtTel.setText("");
+        txtPass.setText("");
+        cbRol.setSelectedIndex(0);
+    }
+    
+    // Método para buscar usuarios según los filtros de búsqueda (Nombre y DNI)
+    private void buscarUsuarios() {
+        String filtroNombre = txtNombre1.getText().trim().toLowerCase();
+        String filtroDNI = txtNombre2.getText().trim().toLowerCase();
+        
+        // Obtiene la lista completa de usuarios
+        List<Usuario> lista = usuarioService.listarUsuarios();
+        
+        if (!filtroNombre.isEmpty()) {
+            lista = lista.stream()
+                    .filter(u -> u.getNombre().toLowerCase().contains(filtroNombre))
+                    .collect(Collectors.toList());
+        }
+        if (!filtroDNI.isEmpty()) {
+            lista = lista.stream()
+                    .filter(u -> u.getDocumentoIdentidad().toLowerCase().contains(filtroDNI))
+                    .collect(Collectors.toList());
+        }
+        
+        llenarTablaUsuarios(lista);
+    }
+    
+    // Método para llenar la tabla de usuarios
+    private void llenarTablaUsuarios(List<Usuario> usuarios) {
+        String[] columnas = {"ID", "Nombre", "DNI", "Email", "Teléfono", "Tipo"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+        for (Usuario u : usuarios) {
+            Object[] fila = new Object[6];
+            fila[0] = u.getIdUsuario();
+            fila[1] = u.getNombre();
+            fila[2] = u.getDocumentoIdentidad();
+            fila[3] = u.getEmail();
+            fila[4] = u.getTelefono();
+            fila[5] = u.getTipo();
+            modelo.addRow(fila);
+        }
+        table_Usuarios.setModel(modelo);
+    }
+    
+    // Método para modificar el usuario seleccionado
+    private void modificarUsuario() {
+        int fila = table_Usuarios.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un usuario para modificar.");
+            return;
+        }
+        try {
+            int idUsuario = (int) table_Usuarios.getValueAt(fila, 0);
+            String nuevoNombre = table_Usuarios.getValueAt(fila, 1).toString();
+            String nuevoDNI = table_Usuarios.getValueAt(fila, 2).toString();
+            String nuevoEmail = table_Usuarios.getValueAt(fila, 3).toString();
+            String nuevoTel = table_Usuarios.getValueAt(fila, 4).toString();
+            String nuevoTipo = table_Usuarios.getValueAt(fila, 5).toString();
+            // Se asume que la contraseña no se modifica desde la tabla
+            
+            Usuario usuario = new Usuario(idUsuario, nuevoNombre, nuevoDNI, nuevoEmail, nuevoTel, nuevoTipo, "");
+            // Se llama al método de actualizar. Se debe implementar actualizarUsuario en UsuarioDAO y UsuarioService.
+            usuarioService.actualizarUsuario(usuario);
+
+            JOptionPane.showMessageDialog(this, "Usuario modificado correctamente.");
+            buscarUsuarios();
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al modificar el usuario: " + e.getMessage());
+        }
+    }
+    
+    // Método para eliminar el usuario seleccionado
+    private void eliminarUsuario() {
+        int fila = table_Usuarios.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un usuario para eliminar.");
+            return;
+        }
+        int idUsuario = (int) table_Usuarios.getValueAt(fila, 0);
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de eliminar este usuario?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        usuarioService.eliminarUsuario(idUsuario);
+
+        JOptionPane.showMessageDialog(this, "Usuario eliminado correctamente.");
+        buscarUsuarios();
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.

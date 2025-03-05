@@ -7,6 +7,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LibroDAO {
+    public void actualizarLibro(Libro libro) {
+    String sql = "UPDATE libros SET titulo = ?, autor = ?, id_categoria = ?, isbn = ?, cantidad_disponible = ?, fecha_publicacion = ?, disponible = ? WHERE id_libro = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setString(1, libro.getTitulo());
+        stmt.setString(2, libro.getAutor());
+        stmt.setInt(3, libro.getIdCategoria());
+        stmt.setString(4, libro.getIsbn());  // asumiendo que has agregado getIsbn()
+        stmt.setInt(5, libro.getCantidadDisponible()); // asumiendo que has agregado getCantidadDisponible()
+        stmt.setString(6, libro.getFechaPublicacion());  // asumiendo que getFechaPublicacion() devuelve String o se formatea correctamente
+        stmt.setBoolean(7, libro.isDisponible());
+        stmt.setInt(8, libro.getIdLibro());
+        stmt.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+
+    public void eliminarLibro(int idLibro) {
+    String sql = "DELETE FROM libros WHERE id_libro = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, idLibro);
+        stmt.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+
     public void agregarLibro(Libro libro) {
         String sql = "INSERT INTO libros (titulo, autor, id_categoria, disponible) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();

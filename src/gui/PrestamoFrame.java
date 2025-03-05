@@ -4,7 +4,20 @@
  */
 package gui;
 import java.awt.Color;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import models.Libro;
+import models.Prestamo;
+import models.Usuario;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
+import services.LibroService;
+import services.PrestamoService;
+import services.UsuarioService;
+import util.JTextFieldAutoCompleter;
 
 /**
  *
@@ -12,13 +25,104 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
  */
 public class PrestamoFrame extends javax.swing.JFrame {
     
+    private PrestamoService prestamoService;
+    private UsuarioService usuarioService;
+    private LibroService libroService;
+    private DefaultTableModel modeloTabla;
     int xMouse, yMouse;
     /**
      * Creates new form PrestamoFrame
      */
     public PrestamoFrame() {
         initComponents();
+        prestamoService = new PrestamoService();
+        usuarioService = new UsuarioService();
+        libroService = new LibroService();
+        cargarUsuarios();
+        cargarLibros();
+        cargarTablaPrestamos();
     }
+    
+    private void cargarUsuarios() {
+        List<Usuario> usuarios = usuarioService.listarUsuarios();
+        List<String> opcionesUsuarios = new ArrayList<>();
+        for (Usuario usuario : usuarios) {
+            // Se muestra el id y el email para que luego se pueda parsear el id
+            opcionesUsuarios.add(usuario.getIdUsuario() + " - " + usuario.getEmail());
+        }
+        // Se asume que la clase JTextFieldAutoCompleter gestiona el autocompletado
+        new JTextFieldAutoCompleter(txtUsuario, opcionesUsuarios);
+    }
+
+    private void cargarLibros() {
+        List<Libro> libros = libroService.listarLibrosDisponibles();
+        List<String> opcionesLibros = new ArrayList<>();
+        for (Libro libro : libros) {
+            opcionesLibros.add(libro.getIdLibro() + " - " + libro.getTitulo());
+        }
+        new JTextFieldAutoCompleter(txtLibro, opcionesLibros);
+    }
+
+    private void registrarPrestamo() {
+        try {
+            String usuarioSeleccionado = txtUsuario.getText().trim();
+            String libroSeleccionado = txtLibro.getText().trim();
+            
+            // Se extrae el id asumiendo que el formato es "id - dato"
+            int idUsuario = Integer.parseInt(usuarioSeleccionado.split(" - ")[0]);
+            int idLibro = Integer.parseInt(libroSeleccionado.split(" - ")[0]);
+
+            // Aquí podrías agregar validaciones adicionales (por ejemplo, límites de préstamo)
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date fechaPrestamo = sdf.parse(txtFechaPrestamo.getText().trim());
+            Date fechaDevolucion = sdf.parse(txtFechaDevolucion.getText().trim());
+
+            // Se usa el constructor sin id para nuevos préstamos
+            Prestamo nuevoPrestamo = new Prestamo(idUsuario, idLibro, fechaPrestamo, fechaDevolucion);
+            prestamoService.registrarPrestamo(nuevoPrestamo);
+            JOptionPane.showMessageDialog(this, "Préstamo registrado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            cargarTablaPrestamos();
+            // Opcional: recargar libros para actualizar disponibilidad
+            cargarLibros();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al registrar el préstamo: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void devolverLibro() {
+        int filaSeleccionada = jTable1.getSelectedRow();
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un préstamo para devolver", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        int idPrestamo = (int) modeloTabla.getValueAt(filaSeleccionada, 0);
+        if (prestamoService.devolverPrestamo(idPrestamo)) {
+            JOptionPane.showMessageDialog(this, "Libro devuelto con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            cargarTablaPrestamos();
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al devolver el libro", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void cargarTablaPrestamos() {
+        modeloTabla = new DefaultTableModel(new String[]{"ID", "Usuario", "Libro", "Fecha Préstamo", "Fecha Devolución"}, 0);
+        jTable1.setModel(modeloTabla);
+
+        List<Prestamo> prestamos = prestamoService.listarPrestamos();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        for (Prestamo prestamo : prestamos) {
+            modeloTabla.addRow(new Object[]{
+                prestamo.getIdPrestamo(),
+                prestamo.getIdUsuario(),
+                prestamo.getIdLibro(),
+                sdf.format(prestamo.getFechaPrestamo()),
+                sdf.format(prestamo.getFechaDevolucion())
+            });
+        }
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -401,6 +505,7 @@ public class PrestamoFrame extends javax.swing.JFrame {
 
     private void btnSaveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseClicked
         // TODO add your handling code here:
+        registrarPrestamo();
     }//GEN-LAST:event_btnSaveMouseClicked
 
     private void btnSaveMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseEntered
@@ -419,6 +524,7 @@ public class PrestamoFrame extends javax.swing.JFrame {
 
     private void btnDevolverMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDevolverMouseClicked
         // TODO add your handling code here:
+        devolverLibro();
     }//GEN-LAST:event_btnDevolverMouseClicked
 
     private void btnDevolverMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDevolverMouseEntered
@@ -442,14 +548,14 @@ public class PrestamoFrame extends javax.swing.JFrame {
     private void btnHomeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseEntered
         // TODO add your handling code here:
         Color fondo = new Color(93,247,194);
-        btnDevolver.setBackground(fondo);
-        lblDevolver.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home_sel.png")));
+        btnHome.setBackground(fondo);
+        lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home_sel.png")));
     }//GEN-LAST:event_btnHomeMouseEntered
 
     private void btnHomeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseExited
         // TODO add your handling code here:
-        btnDevolver.setBackground(Color.WHITE);
-        lblDevolver.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png")));
+        btnHome.setBackground(Color.WHITE);
+        lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png")));
     }//GEN-LAST:event_btnHomeMouseExited
 
     /**

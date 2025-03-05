@@ -5,6 +5,16 @@
 package gui;
 
 import java.awt.Color;
+import java.util.List;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import models.Categoria;
+import models.Libro;
+import services.CategoriaService;
+import services.LibroService;
+import util.JTextFieldAutoCompleter;
+import util.Sesion;
 
 /**
  *
@@ -12,12 +22,100 @@ import java.awt.Color;
  */
 public class DisponibleFrame extends javax.swing.JFrame {
     int xMouse, yMouse;
+    private LibroService libroService;
+    private CategoriaService categoriaService;
     /**
      * Creates new form DisponibleFrame
      */
     public DisponibleFrame() {
         initComponents();
+        // Inicializar servicios (si no se hace ya)
+        libroService = new LibroService();
+        categoriaService = new CategoriaService();
+
+        // Cargar el combo de categorías
+        cargarCategorias();
+
+        // Configurar autocompletado para los JTextField de título y autor
+        new JTextFieldAutoCompleter(b_txtTitulo, libroService.obtenerTitulosLibros());
+        new JTextFieldAutoCompleter(b_txtAutor, libroService.obtenerAutoresLibros());
+
+        // Llenar la tabla al inicio con todos los libros disponibles
+        llenarTabla(libroService.listarLibrosDisponibles());
+
     }
+    
+    private void cargarCategorias() {
+        List<Categoria> listaCategorias = categoriaService.listarCategorias();
+        
+        DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+        model.addElement("Todas"); // id=0 (filtro inactivo)
+        
+        for (Categoria cat : listaCategorias) {
+            // "id - nombre"
+            model.addElement(cat.getIdCategoria() + " - " + cat.getNombre());
+        }
+        b_cbCateg.setModel(model);
+        b_cbCateg.setSelectedIndex(0);
+    }
+    
+    /**
+     * Configura el autocompletado en los JTextField de título y autor.
+     */
+    private void cargarAutocompletes() {
+        // Obtenemos listas de títulos y autores únicos para autocompletar
+        List<String> titulos = libroService.obtenerTitulosLibros();
+        List<String> autores = libroService.obtenerAutoresLibros();
+        
+        // Asignamos autocompletado a cada campo
+        new JTextFieldAutoCompleter(b_txtTitulo, titulos);
+        new JTextFieldAutoCompleter(b_txtAutor, autores);
+    }
+    
+    /**
+     * Llama al servicio para buscar libros disponibles según los filtros
+     * y llena la tabla con los resultados.
+     */
+    private void buscarLibros() {
+    String titulo = b_txtTitulo.getText().trim();
+    String autor = b_txtAutor.getText().trim();
+    
+    int idCategoria = 0;
+    String catSeleccionada = (String) b_cbCateg.getSelectedItem();
+    if (catSeleccionada != null && !catSeleccionada.equals("Todas")) {
+        try {
+            idCategoria = Integer.parseInt(catSeleccionada.split(" - ")[0]);
+        } catch (NumberFormatException e) {
+            idCategoria = 0;
+        }
+    }
+    
+    List<Libro> librosFiltrados = libroService.buscarLibrosDisponibles(titulo, autor, idCategoria);
+    llenarTabla(librosFiltrados);
+}
+
+    
+    /**
+     * Llena la tabla table_libros con la lista de libros recibida.
+     */
+    private void llenarTabla(List<Libro> libros) {
+    String[] columnas = { "ID", "Título", "Autor", "Categoría", "Disponible" };
+    DefaultTableModel model = new DefaultTableModel(columnas, 0);
+    
+    for (Libro libro : libros) {
+        Object[] fila = new Object[5];
+        fila[0] = libro.getIdLibro();
+        fila[1] = libro.getTitulo();
+        fila[2] = libro.getAutor();
+        fila[3] = libro.getIdCategoria(); // O el nombre real de la categoría, si lo tienes
+        fila[4] = libro.isDisponible() ? "Sí" : "No";
+        model.addRow(fila);
+    }
+    
+    table_libros.setModel(model);
+}
+
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
