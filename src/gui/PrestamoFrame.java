@@ -50,10 +50,12 @@ public class PrestamoFrame extends javax.swing.JFrame {
             // Se muestra el id y el email para que luego se pueda parsear el id
             opcionesUsuarios.add(usuario.getIdUsuario() + " - " + usuario.getEmail());
         }
-        // Se asume que la clase JTextFieldAutoCompleter gestiona el autocompletado
         new JTextFieldAutoCompleter(txtUsuario, opcionesUsuarios);
     }
 
+    /**
+     * Carga los libros disponibles en el campo de autocompletado.
+     */
     private void cargarLibros() {
         List<Libro> libros = libroService.listarLibrosDisponibles();
         List<String> opcionesLibros = new ArrayList<>();
@@ -63,6 +65,9 @@ public class PrestamoFrame extends javax.swing.JFrame {
         new JTextFieldAutoCompleter(txtLibro, opcionesLibros);
     }
 
+    /**
+     * Registra un nuevo préstamo a partir de los datos ingresados.
+     */
     private void registrarPrestamo() {
         try {
             String usuarioSeleccionado = txtUsuario.getText().trim();
@@ -72,7 +77,7 @@ public class PrestamoFrame extends javax.swing.JFrame {
             int idUsuario = Integer.parseInt(usuarioSeleccionado.split(" - ")[0]);
             int idLibro = Integer.parseInt(libroSeleccionado.split(" - ")[0]);
 
-            // Aquí podrías agregar validaciones adicionales (por ejemplo, límites de préstamo)
+            // Validaciones adicionales pueden agregarse aquí
             
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             Date fechaPrestamo = sdf.parse(txtFechaPrestamo.getText().trim());
@@ -83,13 +88,16 @@ public class PrestamoFrame extends javax.swing.JFrame {
             prestamoService.registrarPrestamo(nuevoPrestamo);
             JOptionPane.showMessageDialog(this, "Préstamo registrado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             cargarTablaPrestamos();
-            // Opcional: recargar libros para actualizar disponibilidad
+            // Recargar libros para actualizar la disponibilidad
             cargarLibros();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error al registrar el préstamo: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * Devuelve el libro del préstamo seleccionado. Si no se ha seleccionado ninguna fila, muestra un mensaje de error.
+     */
     private void devolverLibro() {
         int filaSeleccionada = jTable1.getSelectedRow();
         if (filaSeleccionada == -1) {
@@ -97,6 +105,7 @@ public class PrestamoFrame extends javax.swing.JFrame {
             return;
         }
         
+        // Se asume que la primera columna contiene el ID del préstamo
         int idPrestamo = (int) modeloTabla.getValueAt(filaSeleccionada, 0);
         if (prestamoService.devolverPrestamo(idPrestamo)) {
             JOptionPane.showMessageDialog(this, "Libro devuelto con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -106,6 +115,9 @@ public class PrestamoFrame extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Carga la tabla de préstamos con todos los préstamos de la base de datos.
+     */
     private void cargarTablaPrestamos() {
         modeloTabla = new DefaultTableModel(new String[]{"ID", "Usuario", "Libro", "Fecha Préstamo", "Fecha Devolución"}, 0);
         jTable1.setModel(modeloTabla);
@@ -161,6 +173,11 @@ public class PrestamoFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         head.setBackground(new java.awt.Color(143, 159, 179));
         head.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
@@ -543,6 +560,10 @@ public class PrestamoFrame extends javax.swing.JFrame {
 
     private void btnHomeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseClicked
         // TODO add your handling code here:
+        DashboardFrame dashboard = new DashboardFrame();
+        dashboard.setVisible(true);
+        // Cierra el frame actual
+        this.dispose();
     }//GEN-LAST:event_btnHomeMouseClicked
 
     private void btnHomeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseEntered
@@ -557,6 +578,11 @@ public class PrestamoFrame extends javax.swing.JFrame {
         btnHome.setBackground(Color.WHITE);
         lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png")));
     }//GEN-LAST:event_btnHomeMouseExited
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        // TODO add your handling code here:
+                this.setLocationRelativeTo(null);
+    }//GEN-LAST:event_formWindowOpened
 
     /**
      * @param args the command line arguments
@@ -596,7 +622,6 @@ public class PrestamoFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel btnDevolver;
     private javax.swing.JPanel btnExit;
-    private javax.swing.JPanel btnExit1;
     private javax.swing.JPanel btnHome;
     private javax.swing.JPanel btnSave;
     private javax.swing.JPanel head;
@@ -608,7 +633,6 @@ public class PrestamoFrame extends javax.swing.JFrame {
     private javax.swing.JTable jTable1;
     private javax.swing.JLabel lblDevolver;
     private javax.swing.JLabel lblExit;
-    private javax.swing.JLabel lblExit1;
     private javax.swing.JLabel lblHome;
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblNombre1;

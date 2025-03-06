@@ -45,7 +45,7 @@ public class DashboardFrame extends javax.swing.JFrame {
         btnGP.setEnabled(rol.equals("Administrador") || rol.equals("Empleado"));
         btnGL.setEnabled(rol.equals("Administrador") || rol.equals("Empleado") || rol.equals("Usuario Regular"));
         btnRep.setEnabled(rol.equals("Administrador"));
-        btnLibroDis.setEnabled(rol.equals("Usuario Regular")); // Libros Disponibles solo para Usuario Regular
+        btnLibroDis.setEnabled(rol.equals("Usuario Regular")|| rol.equals("Administrador")|| rol.equals("Empleado")); // Libros Disponibles solo para Usuario Regular
     }
     
     private boolean verificarPermiso(String permisoRequerido) {
@@ -497,11 +497,13 @@ public class DashboardFrame extends javax.swing.JFrame {
 
     private void btnGLMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGLMouseClicked
         // TODO add your handling code here:
-        if (verificarPermiso("Empleado")) {
+        if (verificarPermiso("Empleado")||verificarPermiso("Administrador")||verificarPermiso("Empleado")) {
             new LibrosFrame().setVisible(true);
+            dispose();
         } else {
             mostrarAccesoDenegado();
         }
+        
     }//GEN-LAST:event_btnGLMouseClicked
 
     private void btnGLMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGLMouseEntered
@@ -522,9 +524,11 @@ public class DashboardFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
         if (verificarPermiso("Administrador")) {
                     new UsuarioFrame().setVisible(true);
+                    dispose();
                 } else {
                     mostrarAccesoDenegado();
-                } 
+                }
+        
     }//GEN-LAST:event_btnGUMouseClicked
 
     private void btnGUMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGUMouseEntered
@@ -546,9 +550,11 @@ public class DashboardFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
                 if (verificarPermiso("Administrador")) {
                     new ReporteFrame().setVisible(true);
+                    dispose();
                 } else {
                     mostrarAccesoDenegado();
                 }
+                
             
     }//GEN-LAST:event_btnRepMouseClicked
 
@@ -568,11 +574,13 @@ public class DashboardFrame extends javax.swing.JFrame {
 
     private void btnGPMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGPMouseClicked
         // TODO add your handling code here:
-        if (verificarPermiso("Empleado")) {
+        if (verificarPermiso("Empleado")||verificarPermiso("Administrador")) {
                     new PrestamoFrame().setVisible(true);
+                    dispose();
                 } else {
                     mostrarAccesoDenegado();
                 }
+        
     }//GEN-LAST:event_btnGPMouseClicked
 
     private void btnGPMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnGPMouseEntered
@@ -617,8 +625,9 @@ public class DashboardFrame extends javax.swing.JFrame {
 
     private void btnLibroDisMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnLibroDisMouseClicked
         // TODO add your handling code here:
-        if (verificarPermiso("Usuario Regular")) {
+        if (verificarPermiso("Empleado")||verificarPermiso("Administrador")||verificarPermiso("Empleado")) {
             new DisponibleFrame().setVisible(true);
+            dispose();
         } else {
             mostrarAccesoDenegado();
         }

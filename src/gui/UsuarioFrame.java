@@ -193,6 +193,8 @@ public class UsuarioFrame extends javax.swing.JFrame {
         head = new javax.swing.JPanel();
         btnExit = new javax.swing.JPanel();
         lblExit = new javax.swing.JLabel();
+        btnHome = new javax.swing.JPanel();
+        lblHome = new javax.swing.JLabel();
         lblNombre = new javax.swing.JLabel();
         lblNombre1 = new javax.swing.JLabel();
         lblNombre2 = new javax.swing.JLabel();
@@ -280,19 +282,56 @@ public class UsuarioFrame extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
+        btnHome.setBackground(new java.awt.Color(255, 255, 255));
+        btnHome.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(143, 159, 179)));
+        btnHome.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btnHomeMouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnHomeMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnHomeMouseExited(evt);
+            }
+        });
+
+        lblHome.setFont(new java.awt.Font("Consolas", 1, 18)); // NOI18N
+        lblHome.setForeground(new java.awt.Color(255, 255, 255));
+        lblHome.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png"))); // NOI18N
+
+        javax.swing.GroupLayout btnHomeLayout = new javax.swing.GroupLayout(btnHome);
+        btnHome.setLayout(btnHomeLayout);
+        btnHomeLayout.setHorizontalGroup(
+            btnHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(btnHomeLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblHome, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        btnHomeLayout.setVerticalGroup(
+            btnHomeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, btnHomeLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(lblHome, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
         javax.swing.GroupLayout headLayout = new javax.swing.GroupLayout(head);
         head.setLayout(headLayout);
         headLayout.setHorizontalGroup(
             headLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(headLayout.createSequentialGroup()
                 .addComponent(btnExit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 780, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 720, Short.MAX_VALUE)
+                .addComponent(btnHome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(26, 26, 26))
         );
         headLayout.setVerticalGroup(
             headLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, headLayout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(btnExit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(btnExit, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(btnHome, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         lblNombre.setFont(new java.awt.Font("Consolas", 0, 12)); // NOI18N
@@ -541,8 +580,8 @@ public class UsuarioFrame extends javax.swing.JFrame {
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(head, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addComponent(head, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(14, 14, 14)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel1)
@@ -605,7 +644,7 @@ public class UsuarioFrame extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
@@ -645,6 +684,8 @@ public class UsuarioFrame extends javax.swing.JFrame {
 
     private void btnSaveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseClicked
         // TODO add your handling code here:
+        registrarUsuario();
+        
     }//GEN-LAST:event_btnSaveMouseClicked
 
     private void btnSaveMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseEntered
@@ -667,6 +708,8 @@ public class UsuarioFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_formWindowOpened
 
     private void btnBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBuscarMouseClicked
+        buscarUsuarios();
+
         // TODO add your handling code here:
     }//GEN-LAST:event_btnBuscarMouseClicked
 
@@ -686,6 +729,9 @@ public class UsuarioFrame extends javax.swing.JFrame {
 
     private void btnDeleteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseClicked
         // TODO add your handling code here:
+        eliminarUsuario();
+        
+        
     }//GEN-LAST:event_btnDeleteMouseClicked
 
     private void btnDeleteMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseEntered
@@ -704,6 +750,9 @@ public class UsuarioFrame extends javax.swing.JFrame {
 
     private void btnModMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnModMouseClicked
         // TODO add your handling code here:
+        modificarUsuario();
+        
+        
     }//GEN-LAST:event_btnModMouseClicked
 
     private void btnModMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnModMouseEntered
@@ -719,6 +768,27 @@ public class UsuarioFrame extends javax.swing.JFrame {
         btnMod.setBackground(fondo);
         lblMod.setForeground(Color.WHITE);
     }//GEN-LAST:event_btnModMouseExited
+
+    private void btnHomeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseClicked
+        // TODO add your handling code here:
+        DashboardFrame dashboard = new DashboardFrame();
+        dashboard.setVisible(true);
+        // Cierra el frame actual
+        this.dispose();
+    }//GEN-LAST:event_btnHomeMouseClicked
+
+    private void btnHomeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseEntered
+        // TODO add your handling code here:
+        Color fondo = new Color(93,247,194);
+        btnHome.setBackground(fondo);
+        lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home_sel.png")));
+    }//GEN-LAST:event_btnHomeMouseEntered
+
+    private void btnHomeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseExited
+        // TODO add your handling code here:
+        btnHome.setBackground(Color.WHITE);
+        lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png")));
+    }//GEN-LAST:event_btnHomeMouseExited
 
     /**
      * @param args the command line arguments
@@ -757,13 +827,11 @@ public class UsuarioFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel btnBuscar;
-    private javax.swing.JPanel btnBuscar1;
-    private javax.swing.JPanel btnBuscar2;
     private javax.swing.JPanel btnDelete;
     private javax.swing.JPanel btnExit;
+    private javax.swing.JPanel btnHome;
     private javax.swing.JPanel btnMod;
     private javax.swing.JPanel btnSave;
-    private javax.swing.JPanel btnSave1;
     private javax.swing.JComboBox<String> cbRol;
     private javax.swing.JPanel head;
     private javax.swing.JLabel jLabel1;
@@ -773,10 +841,9 @@ public class UsuarioFrame extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JLabel lblBuscar;
-    private javax.swing.JLabel lblBuscar1;
-    private javax.swing.JLabel lblBuscar2;
     private javax.swing.JLabel lblDelete;
     private javax.swing.JLabel lblExit;
+    private javax.swing.JLabel lblHome;
     private javax.swing.JLabel lblMod;
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblNombre1;
@@ -787,7 +854,6 @@ public class UsuarioFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblNombre6;
     private javax.swing.JLabel lblNombre7;
     private javax.swing.JLabel lblSave;
-    private javax.swing.JLabel lblSave1;
     private javax.swing.JTable table_Usuarios;
     private javax.swing.JTextField txtDNI;
     private javax.swing.JTextField txtMail;

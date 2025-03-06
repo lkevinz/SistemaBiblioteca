@@ -33,7 +33,10 @@ public class LibroService {
     // Se asume que solo se listan los libros disponibles para préstamo
     public List<Libro> listarLibrosDisponibles() {
         List<Libro> todos = libroDAO.obtenerLibros();
-        return todos.stream().filter(Libro::isDisponible).collect(Collectors.toList());
+        return todos.stream()
+            .filter(libro -> "true".equalsIgnoreCase(libro.getEstado()))
+            .collect(Collectors.toList());
+
     }
     
     // Retorna títulos únicos para autocompletar

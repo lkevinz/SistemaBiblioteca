@@ -17,7 +17,7 @@ public class LibroDAO {
         stmt.setString(4, libro.getIsbn());  // asumiendo que has agregado getIsbn()
         stmt.setInt(5, libro.getCantidadDisponible()); // asumiendo que has agregado getCantidadDisponible()
         stmt.setString(6, libro.getFechaPublicacion());  // asumiendo que getFechaPublicacion() devuelve String o se formatea correctamente
-        stmt.setBoolean(7, libro.isDisponible());
+        stmt.setString(7, libro.getEstado());
         stmt.setInt(8, libro.getIdLibro());
         stmt.executeUpdate();
     } catch (SQLException e) {
@@ -43,7 +43,7 @@ public class LibroDAO {
             stmt.setString(1, libro.getTitulo());
             stmt.setString(2, libro.getAutor());
             stmt.setInt(3, libro.getIdCategoria());
-            stmt.setBoolean(4, libro.isDisponible());
+            stmt.setString(4, libro.getEstado());
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,7 +62,7 @@ public class LibroDAO {
                     rs.getString("titulo"),
                     rs.getString("autor"),
                     rs.getInt("id_categoria"),
-                    rs.getBoolean("disponible")
+                    rs.getString("estado")
                 ));
             }
         } catch (SQLException e) {

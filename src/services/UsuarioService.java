@@ -25,5 +25,6 @@ public class UsuarioService {
     public void eliminarUsuario(int idUsuario) {
         usuarioDAO.eliminarUsuario(idUsuario);
     }
+    
 }
 

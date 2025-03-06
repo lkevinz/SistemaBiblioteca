@@ -20,4 +20,8 @@ public class CategoriaService {
     public List<Categoria> listarCategorias() {
         return categoriaDAO.obtenerCategorias();
     }
+    public int buscarIdPorNombre(String nombre) {
+    return categoriaDAO.buscarIdPorNombre(nombre);
+}
+
 }

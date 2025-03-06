@@ -99,7 +99,7 @@ public class DisponibleFrame extends javax.swing.JFrame {
      * Llena la tabla table_libros con la lista de libros recibida.
      */
     private void llenarTabla(List<Libro> libros) {
-    String[] columnas = { "ID", "Título", "Autor", "Categoría", "Disponible" };
+    String[] columnas = { "ID", "Título", "Autor", "Categoría", "Estado" };
     DefaultTableModel model = new DefaultTableModel(columnas, 0);
     
     for (Libro libro : libros) {
@@ -108,7 +108,7 @@ public class DisponibleFrame extends javax.swing.JFrame {
         fila[1] = libro.getTitulo();
         fila[2] = libro.getAutor();
         fila[3] = libro.getIdCategoria(); // O el nombre real de la categoría, si lo tienes
-        fila[4] = libro.isDisponible() ? "Sí" : "No";
+        fila[4] = libro.getEstado();
         model.addRow(fila);
     }
     
@@ -146,6 +146,11 @@ public class DisponibleFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         head.setBackground(new java.awt.Color(143, 159, 179));
         head.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
@@ -422,6 +427,7 @@ public class DisponibleFrame extends javax.swing.JFrame {
 
     private void btnBuscarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBuscarMouseClicked
         // TODO add your handling code here:
+        buscarLibros();
     }//GEN-LAST:event_btnBuscarMouseClicked
 
     private void btnBuscarMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnBuscarMouseEntered
@@ -440,6 +446,10 @@ public class DisponibleFrame extends javax.swing.JFrame {
 
     private void btnHomeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseClicked
         // TODO add your handling code here:
+        DashboardFrame dashboard = new DashboardFrame();
+        dashboard.setVisible(true);
+        // Cierra el frame actual
+        this.dispose();
     }//GEN-LAST:event_btnHomeMouseClicked
 
     private void btnHomeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnHomeMouseEntered
@@ -454,6 +464,11 @@ public class DisponibleFrame extends javax.swing.JFrame {
         btnHome.setBackground(Color.WHITE);
         lblHome.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/home.png")));
     }//GEN-LAST:event_btnHomeMouseExited
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        // TODO add your handling code here:
+        this.setLocationRelativeTo(null);
+    }//GEN-LAST:event_formWindowOpened
 
     /**
      * @param args the command line arguments
